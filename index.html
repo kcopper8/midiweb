@@ -32,14 +32,27 @@
             margin-bottom: 1rem;
         }
 
-        .scale-selector {
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .control-row {
             display: flex;
             justify-content: center;
+            align-items: center;
             gap: 0.5rem;
             flex-wrap: wrap;
         }
 
-        .scale-button {
+        .control-label {
+            font-size: 0.75rem;
+            color: #999;
+            margin-right: 0.5rem;
+        }
+
+        .control-button {
             padding: 0.5rem 1rem;
             border: 1px solid #ddd;
             border-radius: 20px;
@@ -50,15 +63,56 @@
             transition: all 0.15s ease;
         }
 
-        .scale-button:hover {
+        .control-button:hover {
             border-color: #999;
             color: #333;
         }
 
-        .scale-button.active {
+        .control-button.active {
             background-color: #333;
             border-color: #333;
             color: #fff;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .volume-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 120px;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #333;
+            cursor: pointer;
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #333;
+            cursor: pointer;
+            border: none;
+        }
+
+        .volume-value {
+            font-size: 0.75rem;
+            color: #666;
+            min-width: 35px;
         }
 
         .button-container {
@@ -127,13 +181,28 @@
 <body>
     <header>
         <h1>계이름 연주기</h1>
-        <div class="scale-selector">
-            <button class="scale-button active" data-scale="major">Major</button>
-            <button class="scale-button" data-scale="minor">Minor</button>
-            <button class="scale-button" data-scale="pentatonic">Pentatonic</button>
-            <button class="scale-button" data-scale="blues">Blues</button>
-            <button class="scale-button" data-scale="chromatic">Chromatic</button>
-            <button class="scale-button" data-scale="dorian">Dorian</button>
+        <div class="controls">
+            <div class="control-row">
+                <span class="control-label">스케일</span>
+                <button class="control-button active" data-scale="major">Major</button>
+                <button class="control-button" data-scale="minor">Minor</button>
+                <button class="control-button" data-scale="pentatonic">Pentatonic</button>
+                <button class="control-button" data-scale="blues">Blues</button>
+                <button class="control-button" data-scale="chromatic">Chromatic</button>
+                <button class="control-button" data-scale="dorian">Dorian</button>
+            </div>
+            <div class="control-row">
+                <span class="control-label">파형</span>
+                <button class="control-button active" data-wave="sine">Sine</button>
+                <button class="control-button" data-wave="square">Square</button>
+                <button class="control-button" data-wave="triangle">Triangle</button>
+                <button class="control-button" data-wave="sawtooth">Sawtooth</button>
+                <div class="volume-control">
+                    <span class="control-label">볼륨</span>
+                    <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50">
+                    <span class="volume-value" id="volumeValue">50%</span>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -191,6 +260,8 @@
         };
 
         let currentScale = 'major';
+        let currentWave = 'sine';
+        let currentVolume = 0.5;
 
         function getFrequency(semitone) {
             return baseFrequency * Math.pow(2, semitone / 12);
@@ -211,11 +282,11 @@
             oscillator.connect(gainNode);
             gainNode.connect(audioContext.destination);
 
-            oscillator.type = 'sine';
+            oscillator.type = currentWave;
             oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
 
             gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.01);
+            gainNode.gain.linearRampToValueAtTime(currentVolume, audioContext.currentTime + 0.01);
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.8);
 
             oscillator.start(audioContext.currentTime);
@@ -265,13 +336,31 @@
         }
 
         // 스케일 선택 이벤트
-        document.querySelectorAll('.scale-button').forEach(button => {
+        document.querySelectorAll('.control-button[data-scale]').forEach(button => {
             button.addEventListener('click', () => {
-                document.querySelector('.scale-button.active').classList.remove('active');
+                document.querySelector('.control-button[data-scale].active').classList.remove('active');
                 button.classList.add('active');
                 currentScale = button.dataset.scale;
                 renderNotes();
             });
+        });
+
+        // 파형 선택 이벤트
+        document.querySelectorAll('.control-button[data-wave]').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelector('.control-button[data-wave].active').classList.remove('active');
+                button.classList.add('active');
+                currentWave = button.dataset.wave;
+            });
+        });
+
+        // 볼륨 슬라이더 이벤트
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeValue = document.getElementById('volumeValue');
+
+        volumeSlider.addEventListener('input', () => {
+            currentVolume = volumeSlider.value / 100;
+            volumeValue.textContent = `${volumeSlider.value}%`;
         });
 
         // 초기 렌더링
