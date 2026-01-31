@@ -1,7 +1,7 @@
 // 계이름 연주기 - 녹음/재생 모듈
 
 import { state, setNestedState } from './state.js';
-import { playNote } from './audio.js';
+import { playNote, playKick, playSnare, playHiHat } from './audio.js';
 import { updateRecordingIndicator, renderRecordingList } from './ui.js';
 
 // 녹음 시작
@@ -22,6 +22,7 @@ export function recordNote(frequency, options = {}) {
         waveform = state.currentWave,
         volume = state.currentVolume,
         duration = null,  // null이면 playNote 기본값 사용
+        drumType = null,  // 드럼 타입: 'kick', 'snare', 'hihat'
         isAccompaniment = false  // 반주 음은 자동 저장 타이머 트리거 안함
     } = options;
 
@@ -46,7 +47,8 @@ export function recordNote(frequency, options = {}) {
         time,
         waveform,
         volume,
-        duration
+        duration,
+        drumType
     });
 
     // 시간 기반 모드: 자동 저장 타이머 설정 (반주 음 제외)
@@ -125,12 +127,21 @@ export function startPlayback(recording, startIndex = 0, timeOffset = 0) {
     notes.forEach((note, index) => {
         const delay = note.time - baseTime - timeOffset;
         const timeout = setTimeout(() => {
-            playNote(note.frequency, {
-                isPlayback: true,
-                waveform: note.waveform,
-                volume: note.volume,
-                duration: note.duration
-            });
+            // 드럼 타입이면 해당 드럼 재생 (재생 시에는 녹음 안함)
+            if (note.drumType) {
+                switch (note.drumType) {
+                    case 'kick': playKick(note.volume, false); break;
+                    case 'snare': playSnare(note.volume, false); break;
+                    case 'hihat': playHiHat(note.volume, false); break;
+                }
+            } else {
+                playNote(note.frequency, {
+                    isPlayback: true,
+                    waveform: note.waveform,
+                    volume: note.volume,
+                    duration: note.duration
+                });
+            }
             state.playback.pausedIndex = startIndex + index + 1;
             state.playback.pausedAt = note.time;
 

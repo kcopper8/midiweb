@@ -86,6 +86,136 @@ export function playClick(isAccent) {
     oscillator.stop(audioContext.currentTime + 0.05);
 }
 
+// 킥 드럼 재생
+export function playKick(volume = 0.3, record = true) {
+    if (volume <= 0) return;
+
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.type = 'sine';
+    // 150Hz에서 시작하여 빠르게 감쇠
+    oscillator.frequency.setValueAtTime(150, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.1);
+
+    gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.2);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.2);
+
+    // 클릭음 추가 (어택감)
+    const clickOsc = audioContext.createOscillator();
+    const clickGain = audioContext.createGain();
+    clickOsc.connect(clickGain);
+    clickGain.connect(audioContext.destination);
+    clickOsc.type = 'square';
+    clickOsc.frequency.setValueAtTime(300, audioContext.currentTime);
+    clickGain.gain.setValueAtTime(volume * 0.3, audioContext.currentTime);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.02);
+    clickOsc.start(audioContext.currentTime);
+    clickOsc.stop(audioContext.currentTime + 0.02);
+
+    // 드럼 녹음
+    if (record) {
+        recordNote(0, { drumType: 'kick', volume, isAccompaniment: true });
+    }
+}
+
+// 스네어 드럼 재생
+export function playSnare(volume = 0.3, record = true) {
+    if (volume <= 0) return;
+
+    // 톤 성분 (삼각파)
+    const toneOsc = audioContext.createOscillator();
+    const toneGain = audioContext.createGain();
+    toneOsc.connect(toneGain);
+    toneGain.connect(audioContext.destination);
+    toneOsc.type = 'triangle';
+    toneOsc.frequency.setValueAtTime(200, audioContext.currentTime);
+    toneGain.gain.setValueAtTime(volume * 0.5, audioContext.currentTime);
+    toneGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
+    toneOsc.start(audioContext.currentTime);
+    toneOsc.stop(audioContext.currentTime + 0.1);
+
+    // 노이즈 성분 (화이트 노이즈)
+    const bufferSize = audioContext.sampleRate * 0.1;
+    const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+
+    const noise = audioContext.createBufferSource();
+    const noiseGain = audioContext.createGain();
+    const noiseFilter = audioContext.createBiquadFilter();
+
+    noise.buffer = buffer;
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(audioContext.destination);
+
+    noiseFilter.type = 'highpass';
+    noiseFilter.frequency.setValueAtTime(1000, audioContext.currentTime);
+
+    noiseGain.gain.setValueAtTime(volume * 0.7, audioContext.currentTime);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.15);
+
+    noise.start(audioContext.currentTime);
+    noise.stop(audioContext.currentTime + 0.15);
+
+    // 드럼 녹음
+    if (record) {
+        recordNote(0, { drumType: 'snare', volume, isAccompaniment: true });
+    }
+}
+
+// 하이햇 재생
+export function playHiHat(volume = 0.3, record = true) {
+    if (volume <= 0) return;
+
+    // 노이즈 기반 하이햇
+    const bufferSize = audioContext.sampleRate * 0.05;
+    const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+
+    const noise = audioContext.createBufferSource();
+    const noiseGain = audioContext.createGain();
+    const bandpass = audioContext.createBiquadFilter();
+    const highpass = audioContext.createBiquadFilter();
+
+    noise.buffer = buffer;
+    noise.connect(bandpass);
+    bandpass.connect(highpass);
+    highpass.connect(noiseGain);
+    noiseGain.connect(audioContext.destination);
+
+    // 밴드패스로 금속성 질감
+    bandpass.type = 'bandpass';
+    bandpass.frequency.setValueAtTime(8000, audioContext.currentTime);
+    bandpass.Q.setValueAtTime(1, audioContext.currentTime);
+
+    highpass.type = 'highpass';
+    highpass.frequency.setValueAtTime(5000, audioContext.currentTime);
+
+    noiseGain.gain.setValueAtTime(volume * 0.5, audioContext.currentTime);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
+
+    noise.start(audioContext.currentTime);
+    noise.stop(audioContext.currentTime + 0.05);
+
+    // 드럼 녹음
+    if (record) {
+        recordNote(0, { drumType: 'hihat', volume, isAccompaniment: true });
+    }
+}
+
 // 코드 재생 (화음)
 export function playChord(degree, duration = 1) {
     const degreeInfo = scaleDegrees[degree];

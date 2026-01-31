@@ -114,6 +114,43 @@ h1 {
     min-width: 35px;
 }
 
+/* 드럼 볼륨 컨트롤 */
+.drum-volume-control {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-left: 0.5rem;
+}
+
+.drum-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 80px;
+    height: 6px;
+    border-radius: 3px;
+    background: #ddd;
+    outline: none;
+}
+
+.drum-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #666;
+    cursor: pointer;
+}
+
+.drum-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #666;
+    cursor: pointer;
+    border: none;
+}
+
 /* 건반 컨테이너 */
 .button-container {
     display: flex;

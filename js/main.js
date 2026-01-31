@@ -175,6 +175,7 @@ function bindMetronomeEvents() {
 function bindAccompanimentEvents() {
     const accompanimentToggle = document.getElementById('accompanimentToggle');
     const progressionSelect = document.getElementById('progressionSelect');
+    const drumVolumeSlider = document.getElementById('drumVolumeSlider');
 
     if (accompanimentToggle) {
         accompanimentToggle.addEventListener('click', () => {
@@ -187,6 +188,12 @@ function bindAccompanimentEvents() {
         progressionSelect.addEventListener('change', () => {
             state.accompaniment.currentProgression = progressionSelect.value;
             state.accompaniment.currentChordIndex = 0;
+        });
+    }
+
+    if (drumVolumeSlider) {
+        drumVolumeSlider.addEventListener('input', () => {
+            state.accompaniment.drumVolume = parseInt(drumVolumeSlider.value) / 100;
         });
     }
 }

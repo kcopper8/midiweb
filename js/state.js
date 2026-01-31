@@ -83,6 +83,41 @@ export const chordProgressions = {
     blues:   { name: 'Blues (12bar)', chords: ['I', 'I', 'I', 'I', 'IV', 'IV', 'I', 'I', 'V', 'IV', 'I', 'V'] },
 };
 
+// 드럼 패턴 프리셋 (16분음표 기준, 0-15 = 1마디)
+// 4/4 박자: 16스텝, 3/4 박자: 12스텝
+export const drumPatterns = {
+    pop: {
+        name: 'Pop',
+        '4/4': { kick: [0, 8], snare: [4, 12], hihat: [2, 4, 6, 8, 10, 12, 14] },
+        '3/4': { kick: [0], snare: [4, 8], hihat: [2, 4, 6, 8, 10] }
+    },
+    classic: {
+        name: 'Classic',
+        '4/4': { kick: [0], snare: [8], hihat: [0, 4, 8, 12] },
+        '3/4': { kick: [0], snare: [4], hihat: [0, 4, 8] }
+    },
+    sad: {
+        name: 'Sad',
+        '4/4': { kick: [0, 10], snare: [4, 12], hihat: [0, 2, 4, 6, 8, 10, 12, 14] },
+        '3/4': { kick: [0], snare: [4], hihat: [0, 2, 4, 6, 8, 10] }
+    },
+    jazz: {
+        name: 'Jazz',
+        '4/4': { kick: [0, 6], snare: [4, 12], hihat: [0, 3, 6, 8, 11, 14] },  // 스윙 느낌
+        '3/4': { kick: [0], snare: [4], hihat: [0, 3, 6, 9] }
+    },
+    fifties: {
+        name: '50s',
+        '4/4': { kick: [0, 4, 8, 12], snare: [4, 12], hihat: [2, 4, 6, 8, 10, 12, 14] },
+        '3/4': { kick: [0, 4, 8], snare: [4, 8], hihat: [2, 4, 6, 8, 10] }
+    },
+    blues: {
+        name: 'Blues',
+        '4/4': { kick: [0, 9], snare: [4, 12], hihat: [0, 3, 6, 8, 11, 14] },  // 셔플
+        '3/4': { kick: [0], snare: [4], hihat: [0, 3, 6, 9] }
+    }
+};
+
 // 앱 상태
 export const state = {
     // 연주 설정
@@ -125,7 +160,9 @@ export const state = {
     accompaniment: {
         enabled: false,
         currentProgression: 'pop',
-        currentChordIndex: 0
+        currentChordIndex: 0,
+        drumVolume: 0.3,
+        currentStep: 0
     },
 
     // 키보드 상태
