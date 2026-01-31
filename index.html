@@ -116,10 +116,29 @@
         }
 
         .button-container {
-            display: grid;
+            display: flex;
+            flex-direction: column;
             flex: 1;
             gap: 4px;
             padding: 4px;
+        }
+
+        .octave-row {
+            display: grid;
+            flex: 1;
+            gap: 4px;
+        }
+
+        .octave-label {
+            position: absolute;
+            top: 4px;
+            left: 8px;
+            font-size: 0.6rem;
+            color: #bbb;
+        }
+
+        .note-button {
+            position: relative;
         }
 
         .note-button {
@@ -208,6 +227,10 @@
                 <button class="control-button" data-scale="dorian">Dorian</button>
             </div>
             <div class="control-row">
+                <span class="control-label">옥타브</span>
+                <button class="control-button active" data-octave="1">1</button>
+                <button class="control-button" data-octave="2">2</button>
+                <button class="control-button" data-octave="3">3</button>
                 <span class="control-label">파형</span>
                 <button class="control-button active" data-wave="sine">Sine</button>
                 <button class="control-button" data-wave="square">Square</button>
@@ -224,7 +247,7 @@
 
     <div class="button-container" id="noteContainer"></div>
 
-    <p class="footer">버튼을 클릭하거나 키보드(A~L)를 누르면 소리가 납니다</p>
+    <p class="footer">버튼을 클릭하거나 키보드(1행: 숫자, 2행: Q~], 3행: A~')를 누르면 소리가 납니다</p>
 
     <script>
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -278,21 +301,29 @@
         let currentScale = 'major';
         let currentWave = 'sine';
         let currentVolume = 0.5;
+        let currentOctaves = 1;
 
-        // 키보드 매핑 (최대 13개 음)
-        const keyboardKeys = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', "'", '\\', ']'];
+        // 키보드 매핑 (3행: 상단, 중단, 하단)
+        const keyboardRows = [
+            ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\\'],
+            ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']'],
+            ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', "'"]
+        ];
         const pressedKeys = new Set();
 
-        function getFrequency(semitone) {
-            return baseFrequency * Math.pow(2, semitone / 12);
+        function getFrequency(semitone, octaveOffset = 0) {
+            const baseOctave = 4;
+            const totalSemitones = semitone + (octaveOffset * 12);
+            return 261.63 * Math.pow(2, totalSemitones / 12);
         }
 
         function getNoteInfo(semitone) {
-            return allNotes.find(note => note.semitone === semitone);
+            const normalizedSemitone = semitone % 12;
+            return allNotes.find(note => note.semitone === normalizedSemitone) || allNotes[0];
         }
 
-        function getOctaveLabel(semitone) {
-            return semitone < 12 ? '4' : '5';
+        function getOctaveNumber(semitone, octaveOffset) {
+            return 4 + octaveOffset + Math.floor(semitone / 12);
         }
 
         function playNote(frequency) {
@@ -316,46 +347,63 @@
         function renderNotes() {
             const container = document.getElementById('noteContainer');
             const scale = scales[currentScale];
-            const noteCount = scale.semitones.length;
+            const notesPerOctave = scale.semitones.length - 1; // 마지막 음은 다음 옥타브 시작음
 
-            container.style.gridTemplateColumns = `repeat(${noteCount}, 1fr)`;
             container.innerHTML = '';
 
-            scale.semitones.forEach((semitone, index) => {
-                const noteInfo = getNoteInfo(semitone);
-                const frequency = getFrequency(semitone);
-                const octave = getOctaveLabel(semitone);
-                const keyHint = keyboardKeys[index] ? keyboardKeys[index].toUpperCase() : '';
+            for (let octaveIdx = 0; octaveIdx < currentOctaves; octaveIdx++) {
+                const octaveRow = document.createElement('div');
+                octaveRow.className = 'octave-row';
 
-                const button = document.createElement('button');
-                button.className = 'note-button';
-                button.dataset.keyIndex = index;
-                button.innerHTML = `
-                    <span class="note-name">${noteInfo.name}</span>
-                    <span class="note-label">${noteInfo.label}${octave}</span>
-                    ${keyHint ? `<span class="note-key">${keyHint}</span>` : ''}
-                `;
+                // 마지막 옥타브면 마지막 음 포함, 아니면 제외
+                const isLastOctave = octaveIdx === currentOctaves - 1;
+                const notesToRender = isLastOctave ? scale.semitones : scale.semitones.slice(0, -1);
 
-                // 마우스 이벤트
-                button.addEventListener('mousedown', () => {
-                    if (audioContext.state === 'suspended') audioContext.resume();
-                    playNote(frequency);
-                    button.classList.add('active');
+                octaveRow.style.gridTemplateColumns = `repeat(${notesToRender.length}, 1fr)`;
+
+                // 키보드 행 선택 (아래에서 위로: 3옥타브일 때 a행, q행, 1행 순)
+                const keyRowIndex = currentOctaves - 1 - octaveIdx;
+                const keyRow = keyboardRows[keyRowIndex] || [];
+
+                notesToRender.forEach((semitone, noteIdx) => {
+                    const noteInfo = getNoteInfo(semitone);
+                    const frequency = getFrequency(semitone, octaveIdx);
+                    const octaveNum = getOctaveNumber(semitone, octaveIdx);
+                    const keyHint = keyRow[noteIdx] ? keyRow[noteIdx].toUpperCase() : '';
+
+                    const button = document.createElement('button');
+                    button.className = 'note-button';
+                    button.dataset.octave = octaveIdx;
+                    button.dataset.noteIndex = noteIdx;
+                    button.innerHTML = `
+                        <span class="note-name">${noteInfo.name}</span>
+                        <span class="note-label">${noteInfo.label}${octaveNum}</span>
+                        ${keyHint ? `<span class="note-key">${keyHint}</span>` : ''}
+                    `;
+
+                    // 마우스 이벤트
+                    button.addEventListener('mousedown', () => {
+                        if (audioContext.state === 'suspended') audioContext.resume();
+                        playNote(frequency);
+                        button.classList.add('active');
+                    });
+                    button.addEventListener('mouseup', () => button.classList.remove('active'));
+                    button.addEventListener('mouseleave', () => button.classList.remove('active'));
+
+                    // 터치 이벤트
+                    button.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        if (audioContext.state === 'suspended') audioContext.resume();
+                        playNote(frequency);
+                        button.classList.add('active');
+                    });
+                    button.addEventListener('touchend', () => button.classList.remove('active'));
+
+                    octaveRow.appendChild(button);
                 });
-                button.addEventListener('mouseup', () => button.classList.remove('active'));
-                button.addEventListener('mouseleave', () => button.classList.remove('active'));
 
-                // 터치 이벤트
-                button.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    if (audioContext.state === 'suspended') audioContext.resume();
-                    playNote(frequency);
-                    button.classList.add('active');
-                });
-                button.addEventListener('touchend', () => button.classList.remove('active'));
-
-                container.appendChild(button);
-            });
+                container.appendChild(octaveRow);
+            }
         }
 
         // 스케일 선택 이벤트
@@ -364,6 +412,16 @@
                 document.querySelector('.control-button[data-scale].active').classList.remove('active');
                 button.classList.add('active');
                 currentScale = button.dataset.scale;
+                renderNotes();
+            });
+        });
+
+        // 옥타브 선택 이벤트
+        document.querySelectorAll('.control-button[data-octave]').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelector('.control-button[data-octave].active').classList.remove('active');
+                button.classList.add('active');
+                currentOctaves = parseInt(button.dataset.octave);
                 renderNotes();
             });
         });
@@ -390,32 +448,53 @@
         document.addEventListener('keydown', (e) => {
             if (e.repeat) return;
             const key = e.key.toLowerCase();
-            const keyIndex = keyboardKeys.indexOf(key);
 
-            if (keyIndex !== -1 && !pressedKeys.has(key)) {
-                pressedKeys.add(key);
-                const button = document.querySelector(`.note-button[data-key-index="${keyIndex}"]`);
-                if (button) {
-                    if (audioContext.state === 'suspended') audioContext.resume();
-                    const scale = scales[currentScale];
-                    if (keyIndex < scale.semitones.length) {
-                        const frequency = getFrequency(scale.semitones[keyIndex]);
-                        playNote(frequency);
-                        button.classList.add('active');
+            // 어느 행에서 키를 찾을지 확인
+            for (let rowIdx = 0; rowIdx < keyboardRows.length; rowIdx++) {
+                const noteIdx = keyboardRows[rowIdx].indexOf(key);
+                if (noteIdx !== -1 && !pressedKeys.has(key)) {
+                    pressedKeys.add(key);
+
+                    // 현재 옥타브 수에 따라 행 매핑 (아래에서 위로)
+                    const octaveIdx = currentOctaves - 1 - rowIdx;
+                    if (octaveIdx >= 0 && octaveIdx < currentOctaves) {
+                        const button = document.querySelector(
+                            `.note-button[data-octave="${octaveIdx}"][data-note-index="${noteIdx}"]`
+                        );
+                        if (button) {
+                            if (audioContext.state === 'suspended') audioContext.resume();
+                            const scale = scales[currentScale];
+                            const isLastOctave = octaveIdx === currentOctaves - 1;
+                            const notesToRender = isLastOctave ? scale.semitones : scale.semitones.slice(0, -1);
+                            if (noteIdx < notesToRender.length) {
+                                const frequency = getFrequency(notesToRender[noteIdx], octaveIdx);
+                                playNote(frequency);
+                                button.classList.add('active');
+                            }
+                        }
                     }
+                    break;
                 }
             }
         });
 
         document.addEventListener('keyup', (e) => {
             const key = e.key.toLowerCase();
-            const keyIndex = keyboardKeys.indexOf(key);
 
-            if (keyIndex !== -1) {
-                pressedKeys.delete(key);
-                const button = document.querySelector(`.note-button[data-key-index="${keyIndex}"]`);
-                if (button) {
-                    button.classList.remove('active');
+            for (let rowIdx = 0; rowIdx < keyboardRows.length; rowIdx++) {
+                const noteIdx = keyboardRows[rowIdx].indexOf(key);
+                if (noteIdx !== -1) {
+                    pressedKeys.delete(key);
+                    const octaveIdx = currentOctaves - 1 - rowIdx;
+                    if (octaveIdx >= 0) {
+                        const button = document.querySelector(
+                            `.note-button[data-octave="${octaveIdx}"][data-note-index="${noteIdx}"]`
+                        );
+                        if (button) {
+                            button.classList.remove('active');
+                        }
+                    }
+                    break;
                 }
             }
         });
