@@ -22,22 +22,11 @@ export function recordNote(frequency, options = {}) {
         waveform = state.currentWave,
         volume = state.currentVolume,
         duration = null,  // null이면 playNote 기본값 사용
-        drumType = null,  // 드럼 타입: 'kick', 'snare', 'hihat'
-        isAccompaniment = false  // 반주 음은 자동 저장 타이머 트리거 안함
+        drumType = null   // 드럼 타입: 'kick', 'snare', 'hihat'
     } = options;
-
-    // 시간 기반 모드: 자동 저장 타이머 리셋 (반주 음 제외)
-    if (state.recordingMode === 'time' && !isAccompaniment) {
-        clearTimeout(state.autoSaveTimer);
-    }
 
     // 메트로놈이 실행 중이 아니면 녹음하지 않음
     if (!state.metronome.isRunning) {
-        return;
-    }
-
-    // 녹음 중이 아니면서 반주 음이면 무시 (사용자 연주가 시작해야 반주도 녹음)
-    if (!state.currentRecording && isAccompaniment) {
         return;
     }
 
@@ -55,13 +44,6 @@ export function recordNote(frequency, options = {}) {
         duration,
         drumType
     });
-
-    // 시간 기반 모드: 자동 저장 타이머 설정 (반주 음 제외)
-    if (state.recordingMode === 'time' && !isAccompaniment) {
-        state.autoSaveTimer = setTimeout(() => {
-            saveCurrentRecording();
-        }, state.autoSaveDelay);
-    }
 }
 
 // 현재 녹음 저장
@@ -79,14 +61,6 @@ export function saveCurrentRecording() {
 
     updateRecordingIndicator(false);
     renderRecordingList();
-}
-
-// 새 연주 시작 (수동 모드용)
-export function startNewRecording() {
-    if (state.currentRecording && state.currentRecording.notes.length > 0) {
-        saveCurrentRecording();
-    }
-    startRecording();
 }
 
 // 녹음 삭제

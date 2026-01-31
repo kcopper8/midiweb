@@ -130,10 +130,7 @@ export const state = {
     recordings: [],
     currentRecording: null,
     recordingStartTime: 0,
-    autoSaveTimer: null,
     recordingIdCounter: 0,
-    recordingMode: 'time',      // 'time' | 'manual' | 'continuous'
-    autoSaveDelay: 3000,
 
     // 재생 관련
     playback: {

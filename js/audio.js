@@ -121,7 +121,7 @@ export function playKick(volume = 0.3, record = true) {
 
     // 드럼 녹음
     if (record) {
-        recordNote(0, { drumType: 'kick', volume, isAccompaniment: true });
+        recordNote(0, { drumType: 'kick', volume });
     }
 }
 
@@ -169,7 +169,7 @@ export function playSnare(volume = 0.3, record = true) {
 
     // 드럼 녹음
     if (record) {
-        recordNote(0, { drumType: 'snare', volume, isAccompaniment: true });
+        recordNote(0, { drumType: 'snare', volume });
     }
 }
 
@@ -212,7 +212,7 @@ export function playHiHat(volume = 0.3, record = true) {
 
     // 드럼 녹음
     if (record) {
-        recordNote(0, { drumType: 'hihat', volume, isAccompaniment: true });
+        recordNote(0, { drumType: 'hihat', volume });
     }
 }
 
@@ -254,8 +254,7 @@ export function playChord(degree, duration = 1) {
         recordNote(frequency, {
             waveform: chordWaveform,
             volume: chordVolume,
-            duration: duration,
-            isAccompaniment: true
+            duration: duration
         });
     });
 }

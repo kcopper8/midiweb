@@ -119,40 +119,6 @@ test.describe('녹음/재생', () => {
     await expect(page.locator('.recording-item')).toHaveCount(0);
   });
 
-  test('[REC-02] 설정 패널이 토글된다', async ({ page }) => {
-    const settingsPanel = page.locator('#settingsPanel');
-
-    await expect(settingsPanel).not.toHaveClass(/open/);
-
-    await page.click('#settingsToggle');
-    await expect(settingsPanel).toHaveClass(/open/);
-
-    await page.click('#settingsToggle');
-    await expect(settingsPanel).not.toHaveClass(/open/);
-  });
-
-  test('[REC-02] 녹음 모드 변경이 작동한다', async ({ page }) => {
-    await page.click('#settingsToggle');
-
-    const modeSelect = page.locator('#recordingModeSelect');
-    const delayRow = page.locator('#delaySettingRow');
-    const newRecordingBtn = page.locator('#newRecordingBtn');
-
-    // 기본: 시간 기반
-    await expect(delayRow).toBeVisible();
-    await expect(newRecordingBtn).not.toHaveClass(/visible/);
-
-    // 수동 모드로 변경
-    await modeSelect.selectOption('manual');
-    await expect(delayRow).not.toBeVisible();
-    await expect(newRecordingBtn).toHaveClass(/visible/);
-
-    // 무한 연속 모드로 변경
-    await modeSelect.selectOption('continuous');
-    await expect(delayRow).not.toBeVisible();
-    await expect(newRecordingBtn).not.toHaveClass(/visible/);
-  });
-
   test('[REC-01] 메트로놈 없이 건반 클릭 시 녹음되지 않는다', async ({ page }) => {
     const indicator = page.locator('#recordingIndicator');
 

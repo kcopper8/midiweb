@@ -75,23 +75,6 @@
         <div class="recording-header">
             <div class="recording-indicator" id="recordingIndicator"></div>
             <span class="recording-title" id="recordingTitle">녹음 대기</span>
-            <button class="new-recording-btn" id="newRecordingBtn">새 연주</button>
-            <button class="settings-toggle" id="settingsToggle" title="녹음 설정">⚙️</button>
-        </div>
-        <div class="settings-panel" id="settingsPanel">
-            <div class="settings-row">
-                <span class="settings-label">녹음 모드</span>
-                <select class="settings-select" id="recordingModeSelect">
-                    <option value="time">시간 기반 (자동 구분)</option>
-                    <option value="manual">수동 구분</option>
-                    <option value="continuous">무한 연속</option>
-                </select>
-            </div>
-            <div class="settings-row" id="delaySettingRow">
-                <span class="settings-label">대기 시간</span>
-                <input type="number" class="settings-input" id="autoSaveDelayInput" value="3" min="1" max="30">
-                <span style="font-size: 0.8rem; color: #888;">초</span>
-            </div>
         </div>
         <div class="recording-list" id="recordingList"></div>
     </section>

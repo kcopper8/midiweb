@@ -1,8 +1,7 @@
 // 계이름 연주기 - 메인 진입점
 
 import { state } from './state.js';
-import { renderNotes, renderRecordingList, playNoteByKey, releaseKey } from './ui.js';
-import { saveCurrentRecording, startNewRecording } from './recording.js';
+import { renderNotes, playNoteByKey, releaseKey } from './ui.js';
 import { toggleMetronome, setBpm, setTimeSignature, updateBpmDisplay } from './metronome.js';
 
 // DOM 로드 완료 후 초기화
@@ -18,7 +17,6 @@ function init() {
     bindWaveEvents();
     bindVolumeEvents();
     bindKeyboardEvents();
-    bindRecordingSettingsEvents();
     bindMetronomeEvents();
     bindAccompanimentEvents();
 }
@@ -81,58 +79,6 @@ function bindKeyboardEvents() {
     document.addEventListener('keyup', (e) => {
         releaseKey(e.key.toLowerCase());
     });
-}
-
-// 녹음 설정 이벤트
-function bindRecordingSettingsEvents() {
-    const settingsToggle = document.getElementById('settingsToggle');
-    const settingsPanel = document.getElementById('settingsPanel');
-    const recordingModeSelect = document.getElementById('recordingModeSelect');
-    const autoSaveDelayInput = document.getElementById('autoSaveDelayInput');
-    const delaySettingRow = document.getElementById('delaySettingRow');
-    const newRecordingBtn = document.getElementById('newRecordingBtn');
-
-    if (settingsToggle && settingsPanel) {
-        settingsToggle.addEventListener('click', () => {
-            settingsPanel.classList.toggle('open');
-        });
-    }
-
-    if (recordingModeSelect) {
-        recordingModeSelect.addEventListener('change', () => {
-            state.recordingMode = recordingModeSelect.value;
-
-            // 시간 기반 모드에서만 대기 시간 설정 표시
-            if (delaySettingRow) {
-                delaySettingRow.style.display = state.recordingMode === 'time' ? 'flex' : 'none';
-            }
-
-            // 수동 모드에서만 "새 연주" 버튼 표시
-            if (newRecordingBtn) {
-                newRecordingBtn.classList.toggle('visible', state.recordingMode === 'manual');
-            }
-
-            // 현재 녹음 중인 것이 있으면 저장
-            if (state.currentRecording && state.currentRecording.notes.length > 0) {
-                saveCurrentRecording();
-            }
-        });
-    }
-
-    if (autoSaveDelayInput) {
-        autoSaveDelayInput.addEventListener('change', () => {
-            const value = parseInt(autoSaveDelayInput.value);
-            if (value >= 1 && value <= 30) {
-                state.autoSaveDelay = value * 1000;
-            }
-        });
-    }
-
-    if (newRecordingBtn) {
-        newRecordingBtn.addEventListener('click', () => {
-            startNewRecording();
-        });
-    }
 }
 
 // 메트로놈 이벤트
