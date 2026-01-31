@@ -170,6 +170,22 @@
             transition: color 0.15s ease;
         }
 
+        .note-key {
+            font-size: 0.65rem;
+            color: #bbb;
+            background-color: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            transition: all 0.15s ease;
+        }
+
+        .note-button:active .note-key,
+        .note-button.active .note-key {
+            background-color: #555;
+            color: #ddd;
+        }
+
         .footer {
             padding: 1rem;
             text-align: center;
@@ -208,7 +224,7 @@
 
     <div class="button-container" id="noteContainer"></div>
 
-    <p class="footer">버튼을 누르면 소리가 납니다</p>
+    <p class="footer">버튼을 클릭하거나 키보드(A~L)를 누르면 소리가 납니다</p>
 
     <script>
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -263,6 +279,10 @@
         let currentWave = 'sine';
         let currentVolume = 0.5;
 
+        // 키보드 매핑 (최대 13개 음)
+        const keyboardKeys = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', "'", '\\', ']'];
+        const pressedKeys = new Set();
+
         function getFrequency(semitone) {
             return baseFrequency * Math.pow(2, semitone / 12);
         }
@@ -301,16 +321,19 @@
             container.style.gridTemplateColumns = `repeat(${noteCount}, 1fr)`;
             container.innerHTML = '';
 
-            scale.semitones.forEach(semitone => {
+            scale.semitones.forEach((semitone, index) => {
                 const noteInfo = getNoteInfo(semitone);
                 const frequency = getFrequency(semitone);
                 const octave = getOctaveLabel(semitone);
+                const keyHint = keyboardKeys[index] ? keyboardKeys[index].toUpperCase() : '';
 
                 const button = document.createElement('button');
                 button.className = 'note-button';
+                button.dataset.keyIndex = index;
                 button.innerHTML = `
                     <span class="note-name">${noteInfo.name}</span>
                     <span class="note-label">${noteInfo.label}${octave}</span>
+                    ${keyHint ? `<span class="note-key">${keyHint}</span>` : ''}
                 `;
 
                 // 마우스 이벤트
@@ -361,6 +384,40 @@
         volumeSlider.addEventListener('input', () => {
             currentVolume = volumeSlider.value / 100;
             volumeValue.textContent = `${volumeSlider.value}%`;
+        });
+
+        // 키보드 이벤트
+        document.addEventListener('keydown', (e) => {
+            if (e.repeat) return;
+            const key = e.key.toLowerCase();
+            const keyIndex = keyboardKeys.indexOf(key);
+
+            if (keyIndex !== -1 && !pressedKeys.has(key)) {
+                pressedKeys.add(key);
+                const button = document.querySelector(`.note-button[data-key-index="${keyIndex}"]`);
+                if (button) {
+                    if (audioContext.state === 'suspended') audioContext.resume();
+                    const scale = scales[currentScale];
+                    if (keyIndex < scale.semitones.length) {
+                        const frequency = getFrequency(scale.semitones[keyIndex]);
+                        playNote(frequency);
+                        button.classList.add('active');
+                    }
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            const keyIndex = keyboardKeys.indexOf(key);
+
+            if (keyIndex !== -1) {
+                pressedKeys.delete(key);
+                const button = document.querySelector(`.note-button[data-key-index="${keyIndex}"]`);
+                if (button) {
+                    button.classList.remove('active');
+                }
+            }
         });
 
         // 초기 렌더링
