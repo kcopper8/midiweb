@@ -19,18 +19,50 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
+        header {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
         h1 {
             color: #333;
             font-weight: 300;
             font-size: 1.5rem;
-            padding: 1.5rem;
-            text-align: center;
             letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+        }
+
+        .scale-selector {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .scale-button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            background-color: #fff;
+            color: #666;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .scale-button:hover {
+            border-color: #999;
+            color: #333;
+        }
+
+        .scale-button.active {
+            background-color: #333;
+            border-color: #333;
+            color: #fff;
         }
 
         .button-container {
             display: grid;
-            grid-template-columns: repeat(8, 1fr);
             flex: 1;
             gap: 4px;
             padding: 4px;
@@ -48,7 +80,7 @@
             justify-content: center;
             align-items: center;
             gap: 8px;
-            min-height: 120px;
+            min-height: 100px;
         }
 
         .note-button:hover {
@@ -59,7 +91,6 @@
         .note-button.active {
             background-color: #333;
             box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-            transform: translateY(0);
         }
 
         .note-button:active .note-name,
@@ -73,14 +104,14 @@
         }
 
         .note-name {
-            font-size: 2rem;
+            font-size: 1.75rem;
             font-weight: 500;
             color: #333;
             transition: color 0.15s ease;
         }
 
         .note-label {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             color: #999;
             transition: color 0.15s ease;
         }
@@ -94,47 +125,84 @@
     </style>
 </head>
 <body>
-    <h1>계이름 연주기</h1>
+    <header>
+        <h1>계이름 연주기</h1>
+        <div class="scale-selector">
+            <button class="scale-button active" data-scale="major">Major</button>
+            <button class="scale-button" data-scale="minor">Minor</button>
+            <button class="scale-button" data-scale="pentatonic">Pentatonic</button>
+            <button class="scale-button" data-scale="blues">Blues</button>
+            <button class="scale-button" data-scale="chromatic">Chromatic</button>
+            <button class="scale-button" data-scale="dorian">Dorian</button>
+        </div>
+    </header>
 
-    <div class="button-container">
-        <button class="note-button" data-frequency="261.63">
-            <span class="note-name">도</span>
-            <span class="note-label">C4</span>
-        </button>
-        <button class="note-button" data-frequency="293.66">
-            <span class="note-name">레</span>
-            <span class="note-label">D4</span>
-        </button>
-        <button class="note-button" data-frequency="329.63">
-            <span class="note-name">미</span>
-            <span class="note-label">E4</span>
-        </button>
-        <button class="note-button" data-frequency="349.23">
-            <span class="note-name">파</span>
-            <span class="note-label">F4</span>
-        </button>
-        <button class="note-button" data-frequency="392.00">
-            <span class="note-name">솔</span>
-            <span class="note-label">G4</span>
-        </button>
-        <button class="note-button" data-frequency="440.00">
-            <span class="note-name">라</span>
-            <span class="note-label">A4</span>
-        </button>
-        <button class="note-button" data-frequency="493.88">
-            <span class="note-name">시</span>
-            <span class="note-label">B4</span>
-        </button>
-        <button class="note-button" data-frequency="523.25">
-            <span class="note-name">도</span>
-            <span class="note-label">C5</span>
-        </button>
-    </div>
+    <div class="button-container" id="noteContainer"></div>
 
     <p class="footer">버튼을 누르면 소리가 납니다</p>
 
     <script>
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const baseFrequency = 261.63; // C4
+
+        // 모든 음 정의 (반음 단위)
+        const allNotes = [
+            { name: '도', label: 'C', semitone: 0 },
+            { name: '도#', label: 'C#', semitone: 1 },
+            { name: '레', label: 'D', semitone: 2 },
+            { name: '레#', label: 'D#', semitone: 3 },
+            { name: '미', label: 'E', semitone: 4 },
+            { name: '파', label: 'F', semitone: 5 },
+            { name: '파#', label: 'F#', semitone: 6 },
+            { name: '솔', label: 'G', semitone: 7 },
+            { name: '솔#', label: 'G#', semitone: 8 },
+            { name: '라', label: 'A', semitone: 9 },
+            { name: '라#', label: 'A#', semitone: 10 },
+            { name: '시', label: 'B', semitone: 11 },
+            { name: '도', label: 'C', semitone: 12 }
+        ];
+
+        // 스케일 정의 (반음 간격)
+        const scales = {
+            major: {
+                name: 'Major (장조)',
+                semitones: [0, 2, 4, 5, 7, 9, 11, 12]
+            },
+            minor: {
+                name: 'Minor (단조)',
+                semitones: [0, 2, 3, 5, 7, 8, 10, 12]
+            },
+            pentatonic: {
+                name: 'Pentatonic (5음계)',
+                semitones: [0, 2, 4, 7, 9, 12]
+            },
+            blues: {
+                name: 'Blues',
+                semitones: [0, 3, 5, 6, 7, 10, 12]
+            },
+            chromatic: {
+                name: 'Chromatic (반음계)',
+                semitones: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            },
+            dorian: {
+                name: 'Dorian',
+                semitones: [0, 2, 3, 5, 7, 9, 10, 12]
+            }
+        };
+
+        let currentScale = 'major';
+
+        function getFrequency(semitone) {
+            return baseFrequency * Math.pow(2, semitone / 12);
+        }
+
+        function getNoteInfo(semitone) {
+            return allNotes.find(note => note.semitone === semitone);
+        }
+
+        function getOctaveLabel(semitone) {
+            return semitone < 12 ? '4' : '5';
+        }
 
         function playNote(frequency) {
             const oscillator = audioContext.createOscillator();
@@ -146,51 +214,68 @@
             oscillator.type = 'sine';
             oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
 
-            // 부드러운 시작
             gainNode.gain.setValueAtTime(0, audioContext.currentTime);
             gainNode.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.01);
-
-            // 부드러운 종료
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.8);
 
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 0.8);
         }
 
-        document.querySelectorAll('.note-button').forEach(button => {
-            const frequency = parseFloat(button.dataset.frequency);
+        function renderNotes() {
+            const container = document.getElementById('noteContainer');
+            const scale = scales[currentScale];
+            const noteCount = scale.semitones.length;
 
-            // 마우스 클릭
-            button.addEventListener('mousedown', () => {
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume();
-                }
-                playNote(frequency);
+            container.style.gridTemplateColumns = `repeat(${noteCount}, 1fr)`;
+            container.innerHTML = '';
+
+            scale.semitones.forEach(semitone => {
+                const noteInfo = getNoteInfo(semitone);
+                const frequency = getFrequency(semitone);
+                const octave = getOctaveLabel(semitone);
+
+                const button = document.createElement('button');
+                button.className = 'note-button';
+                button.innerHTML = `
+                    <span class="note-name">${noteInfo.name}</span>
+                    <span class="note-label">${noteInfo.label}${octave}</span>
+                `;
+
+                // 마우스 이벤트
+                button.addEventListener('mousedown', () => {
+                    if (audioContext.state === 'suspended') audioContext.resume();
+                    playNote(frequency);
+                    button.classList.add('active');
+                });
+                button.addEventListener('mouseup', () => button.classList.remove('active'));
+                button.addEventListener('mouseleave', () => button.classList.remove('active'));
+
+                // 터치 이벤트
+                button.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    if (audioContext.state === 'suspended') audioContext.resume();
+                    playNote(frequency);
+                    button.classList.add('active');
+                });
+                button.addEventListener('touchend', () => button.classList.remove('active'));
+
+                container.appendChild(button);
+            });
+        }
+
+        // 스케일 선택 이벤트
+        document.querySelectorAll('.scale-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelector('.scale-button.active').classList.remove('active');
                 button.classList.add('active');
-            });
-
-            button.addEventListener('mouseup', () => {
-                button.classList.remove('active');
-            });
-
-            button.addEventListener('mouseleave', () => {
-                button.classList.remove('active');
-            });
-
-            // 터치 이벤트 (모바일)
-            button.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume();
-                }
-                playNote(frequency);
-                button.classList.add('active');
-            });
-
-            button.addEventListener('touchend', () => {
-                button.classList.remove('active');
+                currentScale = button.dataset.scale;
+                renderNotes();
             });
         });
+
+        // 초기 렌더링
+        renderNotes();
     </script>
 </body>
 </html>
