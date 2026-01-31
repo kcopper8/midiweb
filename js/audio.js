@@ -1,6 +1,7 @@
 // 계이름 연주기 - 오디오 모듈
 
 import { state, allNotes, chordTypes, scaleDegrees, chordProgressions } from './state.js';
+import { recordNote } from './recording.js';
 
 // AudioContext 인스턴스
 export const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -34,7 +35,8 @@ export function playNote(frequency, options = {}) {
     const {
         isPlayback = false,
         waveform = state.currentWave,
-        volume = state.currentVolume
+        volume = state.currentVolume,
+        duration = null  // null이면 기본 0.8초
     } = options;
 
     const oscillator = audioContext.createOscillator();
@@ -46,12 +48,22 @@ export function playNote(frequency, options = {}) {
     oscillator.type = waveform;
     oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
 
-    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-    gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.01);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.8);
-
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.8);
+    if (duration && duration > 0.2) {
+        // 긴 음 (반주 등): 부드러운 어택과 릴리즈
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.02);
+        gainNode.gain.setValueAtTime(volume, audioContext.currentTime + duration - 0.1);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + duration);
+    } else {
+        // 짧은 음 (건반 연주): 기존 방식
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.8);
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.8);
+    }
 
     return { isPlayback };
 }
@@ -81,6 +93,8 @@ export function playChord(degree, duration = 1) {
 
     const chordIntervals = chordTypes[degreeInfo.type];
     const rootSemitone = degreeInfo.semitone;
+    const chordWaveform = 'sine';
+    const chordVolume = 0.15;
 
     // 코드 구성음 재생 (3개 음 동시)
     chordIntervals.forEach(interval => {
@@ -94,17 +108,25 @@ export function playChord(degree, duration = 1) {
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
 
-        oscillator.type = 'sine';
+        oscillator.type = chordWaveform;
         oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
 
         // 부드러운 어택과 릴리즈
         gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.02);
-        gainNode.gain.setValueAtTime(0.15, audioContext.currentTime + duration - 0.1);
+        gainNode.gain.linearRampToValueAtTime(chordVolume, audioContext.currentTime + 0.02);
+        gainNode.gain.setValueAtTime(chordVolume, audioContext.currentTime + duration - 0.1);
         gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
 
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + duration);
+
+        // 반주 음 녹음 (녹음 중일 때만)
+        recordNote(frequency, {
+            waveform: chordWaveform,
+            volume: chordVolume,
+            duration: duration,
+            isAccompaniment: true
+        });
     });
 }
 

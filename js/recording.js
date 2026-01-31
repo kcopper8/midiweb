@@ -17,10 +17,22 @@ export function startRecording() {
 }
 
 // 음 녹음
-export function recordNote(frequency) {
-    // 시간 기반 모드: 자동 저장 타이머 리셋
-    if (state.recordingMode === 'time') {
+export function recordNote(frequency, options = {}) {
+    const {
+        waveform = state.currentWave,
+        volume = state.currentVolume,
+        duration = null,  // null이면 playNote 기본값 사용
+        isAccompaniment = false  // 반주 음은 자동 저장 타이머 트리거 안함
+    } = options;
+
+    // 시간 기반 모드: 자동 저장 타이머 리셋 (반주 음 제외)
+    if (state.recordingMode === 'time' && !isAccompaniment) {
         clearTimeout(state.autoSaveTimer);
+    }
+
+    // 녹음 중이 아니면서 반주 음이면 무시 (사용자 연주가 시작해야 반주도 녹음)
+    if (!state.currentRecording && isAccompaniment) {
+        return;
     }
 
     // 첫 음이면 녹음 시작
@@ -32,12 +44,13 @@ export function recordNote(frequency) {
     state.currentRecording.notes.push({
         frequency,
         time,
-        waveform: state.currentWave,
-        volume: state.currentVolume
+        waveform,
+        volume,
+        duration
     });
 
-    // 시간 기반 모드: 자동 저장 타이머 설정
-    if (state.recordingMode === 'time') {
+    // 시간 기반 모드: 자동 저장 타이머 설정 (반주 음 제외)
+    if (state.recordingMode === 'time' && !isAccompaniment) {
         state.autoSaveTimer = setTimeout(() => {
             saveCurrentRecording();
         }, state.autoSaveDelay);
@@ -115,7 +128,8 @@ export function startPlayback(recording, startIndex = 0, timeOffset = 0) {
             playNote(note.frequency, {
                 isPlayback: true,
                 waveform: note.waveform,
-                volume: note.volume
+                volume: note.volume,
+                duration: note.duration
             });
             state.playback.pausedIndex = startIndex + index + 1;
             state.playback.pausedAt = note.time;
