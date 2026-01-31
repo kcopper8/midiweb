@@ -7,13 +7,13 @@ test.describe('메트로놈', () => {
     await page.goto('/');
   });
 
-  test('메트로놈 UI가 표시된다', async ({ page }) => {
+  test('[METRO-04] 메트로놈 UI가 표시된다', async ({ page }) => {
     await expect(page.locator('#metronomeToggle')).toBeVisible();
     await expect(page.locator('#bpmSlider')).toBeVisible();
     await expect(page.locator('#bpmValue')).toHaveText('100 BPM');
   });
 
-  test('메트로놈 시작/정지 버튼이 토글된다', async ({ page }) => {
+  test('[METRO-01] 메트로놈 시작/정지 버튼이 토글된다', async ({ page }) => {
     const toggleBtn = page.locator('#metronomeToggle');
 
     // 초기 상태: 정지
@@ -31,7 +31,7 @@ test.describe('메트로놈', () => {
     await expect(toggleBtn).not.toHaveClass(/active/);
   });
 
-  test('BPM 프리셋 버튼이 작동한다', async ({ page }) => {
+  test('[METRO-03] BPM 프리셋 버튼이 작동한다', async ({ page }) => {
     const bpmValue = page.locator('#bpmValue');
     const bpmSlider = page.locator('#bpmSlider');
 
@@ -49,7 +49,7 @@ test.describe('메트로놈', () => {
     await expect(page.locator('.bpm-preset[data-bpm="60"]')).not.toHaveClass(/active/);
   });
 
-  test('BPM 슬라이더가 작동한다', async ({ page }) => {
+  test('[METRO-03] BPM 슬라이더가 작동한다', async ({ page }) => {
     const bpmSlider = page.locator('#bpmSlider');
     const bpmValue = page.locator('#bpmValue');
 
@@ -63,7 +63,7 @@ test.describe('메트로놈', () => {
     await expect(page.locator('.bpm-preset.active')).toHaveCount(0);
   });
 
-  test('박자 선택이 작동한다', async ({ page }) => {
+  test('[METRO-02] 박자 선택이 작동한다', async ({ page }) => {
     // 기본: 4/4
     await expect(page.locator('.control-button[data-time-sig="4"]')).toHaveClass(/active/);
 
@@ -73,7 +73,7 @@ test.describe('메트로놈', () => {
     await expect(page.locator('.control-button[data-time-sig="4"]')).not.toHaveClass(/active/);
   });
 
-  test('메트로놈 실행 중 BPM 변경 시 재시작된다', async ({ page }) => {
+  test('[METRO-01] 메트로놈 실행 중 BPM 변경 시 재시작된다', async ({ page }) => {
     const toggleBtn = page.locator('#metronomeToggle');
 
     // 시작

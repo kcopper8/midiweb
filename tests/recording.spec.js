@@ -7,13 +7,13 @@ test.describe('녹음/재생', () => {
     await page.goto('/');
   });
 
-  test('녹음 섹션 UI가 표시된다', async ({ page }) => {
+  test('[REC-03] 녹음 섹션 UI가 표시된다', async ({ page }) => {
     await expect(page.locator('#recordingIndicator')).toBeVisible();
     await expect(page.locator('#recordingTitle')).toHaveText('녹음 대기');
     await expect(page.locator('#recordingList')).toBeVisible();
   });
 
-  test('건반 클릭 시 녹음 인디케이터가 활성화된다', async ({ page }) => {
+  test('[REC-01] 건반 클릭 시 녹음 인디케이터가 활성화된다', async ({ page }) => {
     const indicator = page.locator('#recordingIndicator');
     const title = page.locator('#recordingTitle');
 
@@ -26,7 +26,7 @@ test.describe('녹음/재생', () => {
     await expect(title).toHaveText('녹음 중');
   });
 
-  test('시간 기반 모드에서 자동 저장된다', async ({ page }) => {
+  test('[REC-02] 시간 기반 모드에서 자동 저장된다', async ({ page }) => {
     // 녹음 (여러 음 연주)
     const notes = page.locator('.note-button');
     await notes.nth(0).dispatchEvent('mousedown');
@@ -46,7 +46,7 @@ test.describe('녹음/재생', () => {
     await expect(page.locator('#recordingIndicator')).not.toHaveClass(/active/);
   });
 
-  test('녹음 목록에 시간과 길이가 표시된다', async ({ page }) => {
+  test('[REC-03] 녹음 목록에 시간과 길이가 표시된다', async ({ page }) => {
     // 녹음
     await page.locator('.note-button').first().dispatchEvent('mousedown');
     await page.waitForTimeout(3500);
@@ -62,7 +62,7 @@ test.describe('녹음/재생', () => {
     await expect(page.locator('.recording-duration')).toContainText('초');
   });
 
-  test('재생 버튼이 작동한다', async ({ page }) => {
+  test('[REC-04] 재생 버튼이 작동한다', async ({ page }) => {
     // 녹음
     await page.locator('.note-button').first().dispatchEvent('mousedown');
     await page.waitForTimeout(3500);
@@ -75,7 +75,7 @@ test.describe('녹음/재생', () => {
     await expect(page.locator('.recording-item')).toHaveClass(/playing/);
   });
 
-  test('정지 버튼이 작동한다', async ({ page }) => {
+  test('[REC-04] 정지 버튼이 작동한다', async ({ page }) => {
     // 녹음
     await page.locator('.note-button').first().dispatchEvent('mousedown');
     await page.waitForTimeout(3500);
@@ -89,7 +89,7 @@ test.describe('녹음/재생', () => {
     await expect(page.locator('.recording-item')).not.toHaveClass(/playing/);
   });
 
-  test('삭제 버튼이 작동한다', async ({ page }) => {
+  test('[REC-04] 삭제 버튼이 작동한다', async ({ page }) => {
     // 녹음
     await page.locator('.note-button').first().dispatchEvent('mousedown');
     await page.waitForTimeout(3500);
@@ -101,7 +101,7 @@ test.describe('녹음/재생', () => {
     await expect(page.locator('.recording-item')).toHaveCount(0);
   });
 
-  test('설정 패널이 토글된다', async ({ page }) => {
+  test('[REC-02] 설정 패널이 토글된다', async ({ page }) => {
     const settingsPanel = page.locator('#settingsPanel');
 
     await expect(settingsPanel).not.toHaveClass(/open/);
@@ -113,7 +113,7 @@ test.describe('녹음/재생', () => {
     await expect(settingsPanel).not.toHaveClass(/open/);
   });
 
-  test('녹음 모드 변경이 작동한다', async ({ page }) => {
+  test('[REC-02] 녹음 모드 변경이 작동한다', async ({ page }) => {
     await page.click('#settingsToggle');
 
     const modeSelect = page.locator('#recordingModeSelect');
@@ -135,7 +135,7 @@ test.describe('녹음/재생', () => {
     await expect(newRecordingBtn).not.toHaveClass(/visible/);
   });
 
-  test('대기 시간 설정이 작동한다', async ({ page }) => {
+  test('[REC-02] 대기 시간 설정이 작동한다', async ({ page }) => {
     await page.click('#settingsToggle');
 
     const delayInput = page.locator('#autoSaveDelayInput');
@@ -156,7 +156,7 @@ test.describe('녹음/재생', () => {
     await expect(page.locator('.recording-item')).toHaveCount(1);
   });
 
-  test('수동 모드에서 새 연주 버튼이 작동한다', async ({ page }) => {
+  test('[REC-02] 수동 모드에서 새 연주 버튼이 작동한다', async ({ page }) => {
     await page.click('#settingsToggle');
     await page.locator('#recordingModeSelect').selectOption('manual');
 
