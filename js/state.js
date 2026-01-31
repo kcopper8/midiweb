@@ -80,6 +80,7 @@ export const chordProgressions = {
     sad:     { name: 'Sad', chords: ['i', 'VI', 'III', 'VII'] },
     jazz:    { name: 'Jazz', chords: ['ii', 'V', 'I', 'I'] },
     fifties: { name: '50s', chords: ['I', 'vi', 'IV', 'V'] },
+    blues:   { name: 'Blues (12bar)', chords: ['I', 'I', 'I', 'I', 'IV', 'IV', 'I', 'I', 'V', 'IV', 'I', 'V'] },
 };
 
 // 앱 상태
