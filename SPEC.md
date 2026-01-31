@@ -193,8 +193,19 @@ frequency = baseFrequency × 2^(semitone/12)
 
 ```
 midiweb/
-├── index.html    # 단일 파일 (HTML + CSS + JS)
-└── SPEC.md       # 기능 스펙 문서
+├── index.html          # HTML 마크업
+├── css/
+│   └── styles.css      # 스타일시트
+├── js/
+│   ├── state.js        # 중앙 상태 관리
+│   ├── audio.js        # Web Audio API 래핑
+│   ├── recording.js    # 녹음/재생 로직
+│   ├── metronome.js    # 메트로놈 로직
+│   ├── ui.js           # DOM 조작/렌더링
+│   └── main.js         # 초기화/이벤트 바인딩
+├── docs/
+│   └── plans/          # 설계 문서
+└── SPEC.md             # 기능 스펙 문서
 ```
 
 ## 향후 확장 가능 기능

@@ -1,0 +1,179 @@
+// 계이름 연주기 - 녹음/재생 모듈
+
+import { state, setNestedState } from './state.js';
+import { playNote } from './audio.js';
+import { updateRecordingIndicator, renderRecordingList } from './ui.js';
+
+// 녹음 시작
+export function startRecording() {
+    state.recordingIdCounter++;
+    state.currentRecording = {
+        id: state.recordingIdCounter,
+        timestamp: new Date().toLocaleTimeString('ko-KR', { hour12: false }),
+        notes: []
+    };
+    state.recordingStartTime = performance.now();
+    updateRecordingIndicator(true);
+}
+
+// 음 녹음
+export function recordNote(frequency) {
+    // 시간 기반 모드: 자동 저장 타이머 리셋
+    if (state.recordingMode === 'time') {
+        clearTimeout(state.autoSaveTimer);
+    }
+
+    // 첫 음이면 녹음 시작
+    if (!state.currentRecording) {
+        startRecording();
+    }
+
+    const time = performance.now() - state.recordingStartTime;
+    state.currentRecording.notes.push({
+        frequency,
+        time,
+        waveform: state.currentWave,
+        volume: state.currentVolume
+    });
+
+    // 시간 기반 모드: 자동 저장 타이머 설정
+    if (state.recordingMode === 'time') {
+        state.autoSaveTimer = setTimeout(() => {
+            saveCurrentRecording();
+        }, state.autoSaveDelay);
+    }
+}
+
+// 현재 녹음 저장
+export function saveCurrentRecording() {
+    if (!state.currentRecording || state.currentRecording.notes.length === 0) {
+        return;
+    }
+
+    const lastNote = state.currentRecording.notes[state.currentRecording.notes.length - 1];
+    state.currentRecording.duration = (lastNote.time / 1000).toFixed(1);
+
+    state.recordings.unshift(state.currentRecording);
+    state.currentRecording = null;
+    state.recordingStartTime = 0;
+
+    updateRecordingIndicator(false);
+    renderRecordingList();
+}
+
+// 새 연주 시작 (수동 모드용)
+export function startNewRecording() {
+    if (state.currentRecording && state.currentRecording.notes.length > 0) {
+        saveCurrentRecording();
+    }
+    startRecording();
+}
+
+// 녹음 삭제
+export function deleteRecording(id) {
+    if (state.playback.currentRecordingId === id) {
+        stopPlayback();
+    }
+    state.recordings = state.recordings.filter(r => r.id !== id);
+    renderRecordingList();
+}
+
+// 재생 토글
+export function togglePlayback(recordingId) {
+    const recording = state.recordings.find(r => r.id === recordingId);
+    if (!recording) return;
+
+    if (state.playback.isPlaying && state.playback.currentRecordingId === recordingId) {
+        if (state.playback.isPaused) {
+            resumePlayback();
+        } else {
+            pausePlayback();
+        }
+    } else {
+        stopPlayback();
+        startPlayback(recording);
+    }
+}
+
+// 재생 시작
+export function startPlayback(recording, startIndex = 0, timeOffset = 0) {
+    setNestedState('playback', {
+        isPlaying: true,
+        isPaused: false,
+        currentRecordingId: recording.id,
+        timeouts: [],
+        playbackStartTime: performance.now(),
+        timeOffset: timeOffset
+    });
+
+    const notes = recording.notes.slice(startIndex);
+    const baseTime = startIndex > 0 ? recording.notes[startIndex].time : 0;
+
+    notes.forEach((note, index) => {
+        const delay = note.time - baseTime - timeOffset;
+        const timeout = setTimeout(() => {
+            playNote(note.frequency, {
+                isPlayback: true,
+                waveform: note.waveform,
+                volume: note.volume
+            });
+            state.playback.pausedIndex = startIndex + index + 1;
+            state.playback.pausedAt = note.time;
+
+            // 마지막 음이면 재생 완료
+            if (startIndex + index === recording.notes.length - 1) {
+                setTimeout(() => {
+                    stopPlayback();
+                }, 100);
+            }
+        }, Math.max(0, delay));
+
+        state.playback.timeouts.push(timeout);
+    });
+
+    renderRecordingList();
+}
+
+// 일시정지
+export function pausePlayback() {
+    state.playback.isPaused = true;
+    state.playback.timeouts.forEach(t => clearTimeout(t));
+    state.playback.timeouts = [];
+
+    const elapsed = performance.now() - state.playback.playbackStartTime + state.playback.timeOffset;
+    state.playback.pausedAt = elapsed;
+
+    renderRecordingList();
+}
+
+// 재개
+export function resumePlayback() {
+    const recording = state.recordings.find(r => r.id === state.playback.currentRecordingId);
+    if (!recording) return;
+
+    let startIndex = 0;
+    for (let i = 0; i < recording.notes.length; i++) {
+        if (recording.notes[i].time >= state.playback.pausedAt) {
+            startIndex = i;
+            break;
+        }
+    }
+
+    const timeOffset = state.playback.pausedAt - (startIndex > 0 ? recording.notes[startIndex].time : 0);
+    startPlayback(recording, startIndex, Math.max(0, timeOffset));
+}
+
+// 정지
+export function stopPlayback() {
+    state.playback.timeouts.forEach(t => clearTimeout(t));
+    setNestedState('playback', {
+        isPlaying: false,
+        isPaused: false,
+        currentRecordingId: null,
+        timeouts: [],
+        pausedAt: 0,
+        pausedIndex: 0
+    });
+
+    renderRecordingList();
+}
