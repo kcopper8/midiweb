@@ -492,3 +492,59 @@ h1 {
     border-color: #4caf50;
     color: #fff;
 }
+
+/* 반주 */
+.accompaniment-divider {
+    width: 1px;
+    height: 24px;
+    background-color: #ddd;
+    margin: 0 0.5rem;
+}
+
+.accompaniment-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid #ddd;
+    border-radius: 50%;
+    background-color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.accompaniment-btn:hover {
+    border-color: #9c27b0;
+}
+
+.accompaniment-btn.active {
+    background-color: #9c27b0;
+    border-color: #9c27b0;
+}
+
+.accompaniment-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.progression-select {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background-color: #fff;
+    color: #666;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.progression-select:hover {
+    border-color: #9c27b0;
+}
+
+.progression-select:focus {
+    outline: none;
+    border-color: #9c27b0;
+}

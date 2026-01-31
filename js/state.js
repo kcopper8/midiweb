@@ -52,6 +52,36 @@ export const keyboardRows = [
     ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', "'"]
 ];
 
+// 코드 타입 (루트 기준 반음 간격)
+export const chordTypes = {
+    major: [0, 4, 7],      // 장3화음
+    minor: [0, 3, 7],      // 단3화음
+};
+
+// 스케일 디그리 -> 반음 오프셋 + 코드 타입
+export const scaleDegrees = {
+    'I':   { semitone: 0, type: 'major' },
+    'ii':  { semitone: 2, type: 'minor' },
+    'iii': { semitone: 4, type: 'minor' },
+    'IV':  { semitone: 5, type: 'major' },
+    'V':   { semitone: 7, type: 'major' },
+    'vi':  { semitone: 9, type: 'minor' },
+    'VII': { semitone: 11, type: 'major' },
+    // 단조용
+    'i':   { semitone: 0, type: 'minor' },
+    'III': { semitone: 3, type: 'major' },
+    'VI':  { semitone: 8, type: 'major' },
+};
+
+// 코드 진행 프리셋
+export const chordProgressions = {
+    pop:     { name: 'Pop', chords: ['I', 'V', 'vi', 'IV'] },
+    classic: { name: 'Classic', chords: ['I', 'IV', 'V', 'I'] },
+    sad:     { name: 'Sad', chords: ['i', 'VI', 'III', 'VII'] },
+    jazz:    { name: 'Jazz', chords: ['ii', 'V', 'I', 'I'] },
+    fifties: { name: '50s', chords: ['I', 'vi', 'IV', 'V'] },
+};
+
 // 앱 상태
 export const state = {
     // 연주 설정
@@ -88,6 +118,13 @@ export const state = {
         timeSignature: 4,
         currentBeat: 0,
         intervalId: null
+    },
+
+    // 반주 관련
+    accompaniment: {
+        enabled: false,
+        currentProgression: 'pop',
+        currentChordIndex: 0
     },
 
     // 키보드 상태

@@ -1,7 +1,7 @@
 // 계이름 연주기 - 메트로놈 모듈
 
 import { state, setNestedState } from './state.js';
-import { playClick, resumeAudioContext } from './audio.js';
+import { playClick, resumeAudioContext, playNextChord } from './audio.js';
 
 // 메트로놈 시작
 export function startMetronome() {
@@ -14,15 +14,24 @@ export function startMetronome() {
         currentBeat: 0
     });
 
+    // 반주 코드 인덱스 리셋
+    state.accompaniment.currentChordIndex = 0;
+
     const intervalMs = 60000 / state.metronome.bpm;
 
     // 즉시 첫 박 재생
     playClick(true);
+    playNextChord();  // 첫 박에 코드 재생
     state.metronome.currentBeat = 1;
 
     state.metronome.intervalId = setInterval(() => {
         const isAccent = state.metronome.currentBeat === 0;
         playClick(isAccent);
+
+        // 마디의 첫 박에 코드 재생
+        if (isAccent) {
+            playNextChord();
+        }
 
         state.metronome.currentBeat =
             (state.metronome.currentBeat + 1) % state.metronome.timeSignature;

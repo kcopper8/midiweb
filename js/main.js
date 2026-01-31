@@ -20,6 +20,7 @@ function init() {
     bindKeyboardEvents();
     bindRecordingSettingsEvents();
     bindMetronomeEvents();
+    bindAccompanimentEvents();
 }
 
 // 스케일 선택 이벤트
@@ -168,4 +169,24 @@ function bindMetronomeEvents() {
 
     // 초기 BPM 표시 업데이트
     updateBpmDisplay();
+}
+
+// 반주 이벤트
+function bindAccompanimentEvents() {
+    const accompanimentToggle = document.getElementById('accompanimentToggle');
+    const progressionSelect = document.getElementById('progressionSelect');
+
+    if (accompanimentToggle) {
+        accompanimentToggle.addEventListener('click', () => {
+            state.accompaniment.enabled = !state.accompaniment.enabled;
+            accompanimentToggle.classList.toggle('active', state.accompaniment.enabled);
+        });
+    }
+
+    if (progressionSelect) {
+        progressionSelect.addEventListener('change', () => {
+            state.accompaniment.currentProgression = progressionSelect.value;
+            state.accompaniment.currentChordIndex = 0;
+        });
+    }
 }
