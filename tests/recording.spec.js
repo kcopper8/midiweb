@@ -13,21 +13,27 @@ test.describe('녹음/재생', () => {
     await expect(page.locator('#recordingList')).toBeVisible();
   });
 
-  test('[REC-01] 건반 클릭 시 녹음 인디케이터가 활성화된다', async ({ page }) => {
+  test('[REC-01] 메트로놈 시작 시 녹음 인디케이터가 활성화된다', async ({ page }) => {
     const indicator = page.locator('#recordingIndicator');
     const title = page.locator('#recordingTitle');
 
     await expect(indicator).not.toHaveClass(/active/);
 
-    // 건반 클릭
-    await page.locator('.note-button').first().dispatchEvent('mousedown');
+    // 메트로놈 시작 → 녹음 시작
+    await page.click('#metronomeToggle');
 
     await expect(indicator).toHaveClass(/active/);
     await expect(title).toHaveText('녹음 중');
+
+    // 메트로놈 정지
+    await page.click('#metronomeToggle');
   });
 
-  test('[REC-02] 시간 기반 모드에서 자동 저장된다', async ({ page }) => {
-    // 녹음 (여러 음 연주)
+  test('[REC-02] 메트로놈 정지 시 녹음이 저장된다', async ({ page }) => {
+    // 메트로놈 시작 → 녹음 시작
+    await page.click('#metronomeToggle');
+
+    // 건반 연주
     const notes = page.locator('.note-button');
     await notes.nth(0).dispatchEvent('mousedown');
     await page.waitForTimeout(100);
@@ -35,8 +41,8 @@ test.describe('녹음/재생', () => {
     await page.waitForTimeout(100);
     await notes.nth(2).dispatchEvent('mousedown');
 
-    // 3초 대기 (자동 저장)
-    await page.waitForTimeout(3500);
+    // 메트로놈 정지 → 녹음 저장
+    await page.click('#metronomeToggle');
 
     // 녹음 목록에 항목이 추가됨
     const recordingItems = page.locator('.recording-item');
@@ -47,9 +53,15 @@ test.describe('녹음/재생', () => {
   });
 
   test('[REC-03] 녹음 목록에 시간과 길이가 표시된다', async ({ page }) => {
-    // 녹음
+    // 메트로놈 시작 → 녹음 시작
+    await page.click('#metronomeToggle');
+
+    // 건반 연주
     await page.locator('.note-button').first().dispatchEvent('mousedown');
-    await page.waitForTimeout(3500);
+    await page.waitForTimeout(100);
+
+    // 메트로놈 정지 → 녹음 저장
+    await page.click('#metronomeToggle');
 
     const recordingInfo = page.locator('.recording-info');
     await expect(recordingInfo).toBeVisible();
@@ -64,8 +76,10 @@ test.describe('녹음/재생', () => {
 
   test('[REC-04] 재생 버튼이 작동한다', async ({ page }) => {
     // 녹음
+    await page.click('#metronomeToggle');
     await page.locator('.note-button').first().dispatchEvent('mousedown');
-    await page.waitForTimeout(3500);
+    await page.waitForTimeout(100);
+    await page.click('#metronomeToggle');
 
     const playBtn = page.locator('.recording-btn[data-action="play"]');
 
@@ -77,8 +91,10 @@ test.describe('녹음/재생', () => {
 
   test('[REC-04] 정지 버튼이 작동한다', async ({ page }) => {
     // 녹음
+    await page.click('#metronomeToggle');
     await page.locator('.note-button').first().dispatchEvent('mousedown');
-    await page.waitForTimeout(3500);
+    await page.waitForTimeout(100);
+    await page.click('#metronomeToggle');
 
     // 재생
     await page.locator('.recording-btn[data-action="play"]').click();
@@ -91,8 +107,10 @@ test.describe('녹음/재생', () => {
 
   test('[REC-04] 삭제 버튼이 작동한다', async ({ page }) => {
     // 녹음
+    await page.click('#metronomeToggle');
     await page.locator('.note-button').first().dispatchEvent('mousedown');
-    await page.waitForTimeout(3500);
+    await page.waitForTimeout(100);
+    await page.click('#metronomeToggle');
 
     await expect(page.locator('.recording-item')).toHaveCount(1);
 
@@ -135,48 +153,18 @@ test.describe('녹음/재생', () => {
     await expect(newRecordingBtn).not.toHaveClass(/visible/);
   });
 
-  test('[REC-02] 대기 시간 설정이 작동한다', async ({ page }) => {
-    await page.click('#settingsToggle');
+  test('[REC-01] 메트로놈 없이 건반 클릭 시 녹음되지 않는다', async ({ page }) => {
+    const indicator = page.locator('#recordingIndicator');
 
-    const delayInput = page.locator('#autoSaveDelayInput');
-    await expect(delayInput).toHaveValue('3');
-
-    await delayInput.fill('5');
-    await delayInput.dispatchEvent('change');
-
-    // 녹음 후 5초 후에 저장되는지 확인
+    // 메트로놈 없이 건반 클릭
     await page.locator('.note-button').first().dispatchEvent('mousedown');
+    await page.waitForTimeout(100);
 
-    // 3초 후에는 아직 저장되지 않음
-    await page.waitForTimeout(3500);
+    // 녹음이 시작되지 않음
+    await expect(indicator).not.toHaveClass(/active/);
+
+    // 녹음 목록에 항목 없음
     await expect(page.locator('.recording-item')).toHaveCount(0);
-
-    // 5초 후에 저장됨
-    await page.waitForTimeout(2000);
-    await expect(page.locator('.recording-item')).toHaveCount(1);
-  });
-
-  test('[REC-02] 수동 모드에서 새 연주 버튼이 작동한다', async ({ page }) => {
-    await page.click('#settingsToggle');
-    await page.locator('#recordingModeSelect').selectOption('manual');
-
-    // 첫 번째 연주
-    await page.locator('.note-button').first().dispatchEvent('mousedown');
-    await page.waitForTimeout(100);
-
-    // 새 연주 버튼 클릭
-    await page.click('#newRecordingBtn');
-
-    // 첫 번째 녹음이 저장됨
-    await expect(page.locator('.recording-item')).toHaveCount(1);
-
-    // 두 번째 연주
-    await page.locator('.note-button').nth(1).dispatchEvent('mousedown');
-    await page.waitForTimeout(100);
-
-    // 다시 새 연주
-    await page.click('#newRecordingBtn');
-    await expect(page.locator('.recording-item')).toHaveCount(2);
   });
 
 });

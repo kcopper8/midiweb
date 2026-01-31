@@ -2,6 +2,7 @@
 
 import { state, setNestedState, drumPatterns } from './state.js';
 import { playClick, resumeAudioContext, playNextChord, playKick, playSnare, playHiHat } from './audio.js';
+import { startRecording, saveCurrentRecording } from './recording.js';
 
 // 드럼 패턴 재생
 function playDrumStep(step) {
@@ -35,6 +36,9 @@ export function startMetronome() {
     // 반주 상태 리셋
     state.accompaniment.currentChordIndex = 0;
     state.accompaniment.currentStep = 0;
+
+    // 녹음 시작
+    startRecording();
 
     // 16분음표 간격 계산 (1박 / 4)
     const sixteenthMs = 60000 / state.metronome.bpm / 4;
@@ -89,6 +93,9 @@ export function stopMetronome() {
     });
 
     state.accompaniment.currentStep = 0;
+
+    // 녹음 저장
+    saveCurrentRecording();
 
     updateMetronomeButton();
 }

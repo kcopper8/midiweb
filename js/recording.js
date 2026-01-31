@@ -31,14 +31,19 @@ export function recordNote(frequency, options = {}) {
         clearTimeout(state.autoSaveTimer);
     }
 
+    // 메트로놈이 실행 중이 아니면 녹음하지 않음
+    if (!state.metronome.isRunning) {
+        return;
+    }
+
     // 녹음 중이 아니면서 반주 음이면 무시 (사용자 연주가 시작해야 반주도 녹음)
     if (!state.currentRecording && isAccompaniment) {
         return;
     }
 
-    // 첫 음이면 녹음 시작
+    // 녹음 중이 아니면 무시 (메트로놈 시작 시 녹음이 시작됨)
     if (!state.currentRecording) {
-        startRecording();
+        return;
     }
 
     const time = performance.now() - state.recordingStartTime;
