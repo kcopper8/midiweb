@@ -211,6 +211,198 @@
             color: #bbb;
             font-size: 0.8rem;
         }
+
+        /* 녹음 목록 영역 */
+        .recording-section {
+            border-top: 1px solid #eee;
+            padding: 1rem;
+            background-color: #fff;
+        }
+
+        .recording-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .recording-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #ddd;
+        }
+
+        .recording-indicator.active {
+            background-color: #e53935;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .recording-title {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .recording-list {
+            max-height: 150px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .recording-list:empty::after {
+            content: '연주하면 자동으로 녹음됩니다';
+            color: #bbb;
+            font-size: 0.8rem;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .recording-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .recording-item.playing {
+            background-color: #e3f2fd;
+        }
+
+        .recording-info {
+            font-size: 0.85rem;
+            color: #333;
+        }
+
+        .recording-duration {
+            color: #888;
+            margin-left: 0.5rem;
+        }
+
+        .recording-controls {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .recording-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 50%;
+            background-color: #fff;
+            color: #666;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .recording-btn:hover {
+            background-color: #333;
+            color: #fff;
+        }
+
+        .recording-btn.playing {
+            background-color: #1976d2;
+            color: #fff;
+        }
+
+        .recording-btn.delete:hover {
+            background-color: #e53935;
+        }
+
+        /* 설정 관련 스타일 */
+        .settings-toggle {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            color: #888;
+            transition: color 0.15s ease;
+        }
+
+        .settings-toggle:hover {
+            color: #333;
+        }
+
+        .settings-panel {
+            display: none;
+            padding: 0.75rem;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+        }
+
+        .settings-panel.open {
+            display: block;
+        }
+
+        .settings-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .settings-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .settings-label {
+            font-size: 0.8rem;
+            color: #666;
+            min-width: 80px;
+        }
+
+        .settings-select {
+            padding: 0.35rem 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            background-color: #fff;
+        }
+
+        .settings-input {
+            width: 60px;
+            padding: 0.35rem 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        .new-recording-btn {
+            display: none;
+            padding: 0.4rem 0.8rem;
+            border: 1px solid #1976d2;
+            border-radius: 4px;
+            background-color: #fff;
+            color: #1976d2;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-left: auto;
+        }
+
+        .new-recording-btn:hover {
+            background-color: #1976d2;
+            color: #fff;
+        }
+
+        .new-recording-btn.visible {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -246,6 +438,31 @@
     </header>
 
     <div class="button-container" id="noteContainer"></div>
+
+    <section class="recording-section">
+        <div class="recording-header">
+            <div class="recording-indicator" id="recordingIndicator"></div>
+            <span class="recording-title" id="recordingTitle">녹음 대기</span>
+            <button class="new-recording-btn" id="newRecordingBtn">새 연주</button>
+            <button class="settings-toggle" id="settingsToggle" title="녹음 설정">⚙️</button>
+        </div>
+        <div class="settings-panel" id="settingsPanel">
+            <div class="settings-row">
+                <span class="settings-label">녹음 모드</span>
+                <select class="settings-select" id="recordingModeSelect">
+                    <option value="time">시간 기반 (자동 구분)</option>
+                    <option value="manual">수동 구분</option>
+                    <option value="continuous">무한 연속</option>
+                </select>
+            </div>
+            <div class="settings-row" id="delaySettingRow">
+                <span class="settings-label">대기 시간</span>
+                <input type="number" class="settings-input" id="autoSaveDelayInput" value="3" min="1" max="30">
+                <span style="font-size: 0.8rem; color: #888;">초</span>
+            </div>
+        </div>
+        <div class="recording-list" id="recordingList"></div>
+    </section>
 
     <p class="footer">버튼을 클릭하거나 키보드(1행: 숫자, 2행: Q~], 3행: A~')를 누르면 소리가 납니다</p>
 
@@ -303,6 +520,27 @@
         let currentVolume = 0.5;
         let currentOctaves = 1;
 
+        // 녹음 관련 상태
+        let recordings = [];           // 저장된 녹음 목록
+        let currentRecording = null;   // 현재 녹음 중인 데이터
+        let recordingStartTime = 0;    // 녹음 시작 시간
+        let autoSaveTimer = null;      // 자동 저장 타이머
+        let recordingIdCounter = 0;    // 녹음 ID 생성용
+
+        // 녹음 설정
+        let recordingMode = 'time';    // 'time' | 'manual' | 'continuous'
+        let autoSaveDelay = 3000;      // 시간 기반 모드: 대기 시간 (ms)
+
+        // 재생 관련 상태
+        let playbackState = {
+            isPlaying: false,
+            isPaused: false,
+            currentRecordingId: null,
+            timeouts: [],
+            pausedAt: 0,
+            pausedIndex: 0
+        };
+
         // 키보드 매핑 (3행: 상단, 중단, 하단)
         const keyboardRows = [
             ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\\'],
@@ -326,22 +564,261 @@
             return 4 + octaveOffset + Math.floor(semitone / 12);
         }
 
-        function playNote(frequency) {
+        function playNote(frequency, options = {}) {
+            const { isPlayback = false, waveform = currentWave, volume = currentVolume } = options;
+
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
 
             oscillator.connect(gainNode);
             gainNode.connect(audioContext.destination);
 
-            oscillator.type = currentWave;
+            oscillator.type = waveform;
             oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
 
             gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-            gainNode.gain.linearRampToValueAtTime(currentVolume, audioContext.currentTime + 0.01);
+            gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.01);
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.8);
 
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 0.8);
+
+            // 재생 중이 아닐 때만 녹음
+            if (!isPlayback) {
+                recordNote(frequency);
+            }
+        }
+
+        // 녹음 시작
+        function startRecording() {
+            currentRecording = {
+                id: ++recordingIdCounter,
+                timestamp: new Date().toLocaleTimeString('ko-KR', { hour12: false }),
+                notes: []
+            };
+            recordingStartTime = performance.now();
+            updateRecordingIndicator(true);
+        }
+
+        // 음 녹음
+        function recordNote(frequency) {
+            // 녹음 모드가 continuous가 아닐 때 자동 저장 타이머 리셋
+            if (recordingMode === 'time') {
+                clearTimeout(autoSaveTimer);
+            }
+
+            // 첫 음이면 녹음 시작
+            if (!currentRecording) {
+                startRecording();
+            }
+
+            const time = performance.now() - recordingStartTime;
+            currentRecording.notes.push({
+                frequency,
+                time,
+                waveform: currentWave,
+                volume: currentVolume
+            });
+
+            // 시간 기반 모드: 자동 저장 타이머 설정
+            if (recordingMode === 'time') {
+                autoSaveTimer = setTimeout(() => {
+                    saveCurrentRecording();
+                }, autoSaveDelay);
+            }
+        }
+
+        // 현재 녹음 저장
+        function saveCurrentRecording() {
+            if (!currentRecording || currentRecording.notes.length === 0) {
+                return;
+            }
+
+            const lastNote = currentRecording.notes[currentRecording.notes.length - 1];
+            currentRecording.duration = (lastNote.time / 1000).toFixed(1);
+
+            recordings.unshift(currentRecording);
+            currentRecording = null;
+            recordingStartTime = 0;
+
+            updateRecordingIndicator(false);
+            renderRecordingList();
+        }
+
+        // 새 연주 시작 (수동 모드용)
+        function startNewRecording() {
+            if (currentRecording && currentRecording.notes.length > 0) {
+                saveCurrentRecording();
+            }
+            startRecording();
+        }
+
+        // 녹음 삭제
+        function deleteRecording(id) {
+            // 재생 중인 녹음이면 정지
+            if (playbackState.currentRecordingId === id) {
+                stopPlayback();
+            }
+            recordings = recordings.filter(r => r.id !== id);
+            renderRecordingList();
+        }
+
+        // 녹음 인디케이터 업데이트
+        function updateRecordingIndicator(isRecording) {
+            const indicator = document.getElementById('recordingIndicator');
+            const title = document.getElementById('recordingTitle');
+
+            if (isRecording) {
+                indicator.classList.add('active');
+                title.textContent = '녹음 중';
+            } else {
+                indicator.classList.remove('active');
+                title.textContent = '녹음 대기';
+            }
+        }
+
+        // 재생 토글
+        function togglePlayback(recordingId) {
+            const recording = recordings.find(r => r.id === recordingId);
+            if (!recording) return;
+
+            if (playbackState.isPlaying && playbackState.currentRecordingId === recordingId) {
+                if (playbackState.isPaused) {
+                    resumePlayback();
+                } else {
+                    pausePlayback();
+                }
+            } else {
+                stopPlayback();
+                startPlayback(recording);
+            }
+        }
+
+        // 재생 시작
+        function startPlayback(recording, startIndex = 0, timeOffset = 0) {
+            playbackState.isPlaying = true;
+            playbackState.isPaused = false;
+            playbackState.currentRecordingId = recording.id;
+            playbackState.timeouts = [];
+            playbackState.playbackStartTime = performance.now();
+            playbackState.timeOffset = timeOffset;
+
+            const notes = recording.notes.slice(startIndex);
+            const baseTime = startIndex > 0 ? recording.notes[startIndex].time : 0;
+
+            notes.forEach((note, index) => {
+                const delay = note.time - baseTime - timeOffset;
+                const timeout = setTimeout(() => {
+                    playNote(note.frequency, {
+                        isPlayback: true,
+                        waveform: note.waveform,
+                        volume: note.volume
+                    });
+                    playbackState.pausedIndex = startIndex + index + 1;
+                    playbackState.pausedAt = note.time;
+
+                    // 마지막 음이면 재생 완료
+                    if (startIndex + index === recording.notes.length - 1) {
+                        setTimeout(() => {
+                            stopPlayback();
+                        }, 100);
+                    }
+                }, Math.max(0, delay));
+
+                playbackState.timeouts.push(timeout);
+            });
+
+            renderRecordingList();
+        }
+
+        // 일시정지
+        function pausePlayback() {
+            playbackState.isPaused = true;
+            playbackState.timeouts.forEach(t => clearTimeout(t));
+            playbackState.timeouts = [];
+
+            const elapsed = performance.now() - playbackState.playbackStartTime + playbackState.timeOffset;
+            playbackState.pausedAt = elapsed;
+
+            renderRecordingList();
+        }
+
+        // 재개
+        function resumePlayback() {
+            const recording = recordings.find(r => r.id === playbackState.currentRecordingId);
+            if (!recording) return;
+
+            // pausedAt 시간 이후의 노트부터 재생
+            let startIndex = 0;
+            for (let i = 0; i < recording.notes.length; i++) {
+                if (recording.notes[i].time >= playbackState.pausedAt) {
+                    startIndex = i;
+                    break;
+                }
+            }
+
+            const timeOffset = playbackState.pausedAt - (startIndex > 0 ? recording.notes[startIndex].time : 0);
+            startPlayback(recording, startIndex, Math.max(0, timeOffset));
+        }
+
+        // 정지
+        function stopPlayback() {
+            playbackState.timeouts.forEach(t => clearTimeout(t));
+            playbackState.isPlaying = false;
+            playbackState.isPaused = false;
+            playbackState.currentRecordingId = null;
+            playbackState.timeouts = [];
+            playbackState.pausedAt = 0;
+            playbackState.pausedIndex = 0;
+
+            renderRecordingList();
+        }
+
+        // 녹음 목록 렌더링
+        function renderRecordingList() {
+            const list = document.getElementById('recordingList');
+            list.innerHTML = '';
+
+            recordings.forEach(recording => {
+                const item = document.createElement('div');
+                item.className = 'recording-item';
+                item.dataset.id = recording.id;
+
+                if (playbackState.currentRecordingId === recording.id) {
+                    item.classList.add('playing');
+                }
+
+                const isThisPlaying = playbackState.isPlaying && playbackState.currentRecordingId === recording.id;
+                const playBtnIcon = isThisPlaying && !playbackState.isPaused ? '⏸' : '▶';
+                const playBtnClass = isThisPlaying ? 'recording-btn playing' : 'recording-btn';
+
+                item.innerHTML = `
+                    <span class="recording-info">
+                        ${recording.timestamp}
+                        <span class="recording-duration">(${recording.duration}초)</span>
+                    </span>
+                    <div class="recording-controls">
+                        <button class="${playBtnClass}" data-action="play" title="재생">
+                            ${playBtnIcon}
+                        </button>
+                        <button class="recording-btn" data-action="stop" title="정지">■</button>
+                        <button class="recording-btn delete" data-action="delete" title="삭제">🗑</button>
+                    </div>
+                `;
+
+                // 버튼 이벤트
+                item.querySelector('[data-action="play"]').addEventListener('click', () => {
+                    togglePlayback(recording.id);
+                });
+                item.querySelector('[data-action="stop"]').addEventListener('click', () => {
+                    stopPlayback();
+                });
+                item.querySelector('[data-action="delete"]').addEventListener('click', () => {
+                    deleteRecording(recording.id);
+                });
+
+                list.appendChild(item);
+            });
         }
 
         function renderNotes() {
@@ -497,6 +974,44 @@
                     break;
                 }
             }
+        });
+
+        // 설정 토글
+        const settingsToggle = document.getElementById('settingsToggle');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const recordingModeSelect = document.getElementById('recordingModeSelect');
+        const autoSaveDelayInput = document.getElementById('autoSaveDelayInput');
+        const delaySettingRow = document.getElementById('delaySettingRow');
+        const newRecordingBtn = document.getElementById('newRecordingBtn');
+
+        settingsToggle.addEventListener('click', () => {
+            settingsPanel.classList.toggle('open');
+        });
+
+        recordingModeSelect.addEventListener('change', () => {
+            recordingMode = recordingModeSelect.value;
+
+            // 시간 기반 모드에서만 대기 시간 설정 표시
+            delaySettingRow.style.display = recordingMode === 'time' ? 'flex' : 'none';
+
+            // 수동 모드에서만 "새 연주" 버튼 표시
+            newRecordingBtn.classList.toggle('visible', recordingMode === 'manual');
+
+            // 현재 녹음 중인 것이 있으면 저장
+            if (currentRecording && currentRecording.notes.length > 0) {
+                saveCurrentRecording();
+            }
+        });
+
+        autoSaveDelayInput.addEventListener('change', () => {
+            const value = parseInt(autoSaveDelayInput.value);
+            if (value >= 1 && value <= 30) {
+                autoSaveDelay = value * 1000;
+            }
+        });
+
+        newRecordingBtn.addEventListener('click', () => {
+            startNewRecording();
         });
 
         // 초기 렌더링
