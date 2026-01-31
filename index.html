@@ -403,6 +403,96 @@
         .new-recording-btn.visible {
             display: block;
         }
+
+        /* 메트로놈 스타일 */
+        .metronome-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metronome-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            background-color: #fff;
+            color: #666;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+
+        .metronome-btn:hover {
+            border-color: #999;
+            color: #333;
+        }
+
+        .metronome-btn.active {
+            background-color: #4caf50;
+            border-color: #4caf50;
+            color: #fff;
+        }
+
+        .bpm-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100px;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+        }
+
+        .bpm-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #4caf50;
+            cursor: pointer;
+        }
+
+        .bpm-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #4caf50;
+            cursor: pointer;
+            border: none;
+        }
+
+        .bpm-value {
+            font-size: 0.75rem;
+            color: #666;
+            min-width: 55px;
+        }
+
+        .bpm-preset {
+            padding: 0.35rem 0.6rem;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            background-color: #fff;
+            color: #666;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .bpm-preset:hover {
+            border-color: #4caf50;
+            color: #4caf50;
+        }
+
+        .bpm-preset.active {
+            background-color: #4caf50;
+            border-color: #4caf50;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -432,6 +522,22 @@
                     <span class="control-label">볼륨</span>
                     <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50">
                     <span class="volume-value" id="volumeValue">50%</span>
+                </div>
+            </div>
+            <div class="control-row">
+                <span class="control-label">메트로놈</span>
+                <button class="metronome-btn" id="metronomeToggle" title="메트로놈 시작/정지">▶</button>
+                <span class="control-label">박자</span>
+                <button class="control-button active" data-time-sig="4">4/4</button>
+                <button class="control-button" data-time-sig="3">3/4</button>
+                <span class="control-label">BPM</span>
+                <button class="bpm-preset" data-bpm="60">60</button>
+                <button class="bpm-preset" data-bpm="80">80</button>
+                <button class="bpm-preset active" data-bpm="100">100</button>
+                <button class="bpm-preset" data-bpm="120">120</button>
+                <div class="metronome-control">
+                    <input type="range" class="bpm-slider" id="bpmSlider" min="40" max="200" value="100">
+                    <span class="bpm-value" id="bpmValue">100 BPM</span>
                 </div>
             </div>
         </div>
@@ -541,6 +647,15 @@
             pausedIndex: 0
         };
 
+        // 메트로놈 상태
+        let metronomeState = {
+            isRunning: false,
+            bpm: 100,
+            timeSignature: 4,  // 4 = 4/4, 3 = 3/4
+            currentBeat: 0,
+            intervalId: null
+        };
+
         // 키보드 매핑 (3행: 상단, 중단, 하단)
         const keyboardRows = [
             ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\\'],
@@ -562,6 +677,122 @@
 
         function getOctaveNumber(semitone, octaveOffset) {
             return 4 + octaveOffset + Math.floor(semitone / 12);
+        }
+
+        // 메트로놈 클릭음 재생
+        function playMetronomeClick(isAccent) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(isAccent ? 1000 : 800, audioContext.currentTime);
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.05);
+        }
+
+        // 메트로놈 시작
+        function startMetronome() {
+            if (metronomeState.isRunning) return;
+
+            if (audioContext.state === 'suspended') audioContext.resume();
+
+            metronomeState.isRunning = true;
+            metronomeState.currentBeat = 0;
+
+            const intervalMs = 60000 / metronomeState.bpm;
+
+            // 즉시 첫 박 재생
+            playMetronomeClick(true);
+            metronomeState.currentBeat = 1;
+
+            metronomeState.intervalId = setInterval(() => {
+                const isAccent = metronomeState.currentBeat === 0;
+                playMetronomeClick(isAccent);
+
+                metronomeState.currentBeat = (metronomeState.currentBeat + 1) % metronomeState.timeSignature;
+            }, intervalMs);
+
+            updateMetronomeButton();
+        }
+
+        // 메트로놈 정지
+        function stopMetronome() {
+            if (!metronomeState.isRunning) return;
+
+            metronomeState.isRunning = false;
+            if (metronomeState.intervalId) {
+                clearInterval(metronomeState.intervalId);
+                metronomeState.intervalId = null;
+            }
+            metronomeState.currentBeat = 0;
+
+            updateMetronomeButton();
+        }
+
+        // 메트로놈 토글
+        function toggleMetronome() {
+            if (metronomeState.isRunning) {
+                stopMetronome();
+            } else {
+                startMetronome();
+            }
+        }
+
+        // BPM 변경
+        function setMetronomeBpm(bpm) {
+            metronomeState.bpm = Math.max(40, Math.min(200, bpm));
+
+            // 실행 중이면 재시작
+            if (metronomeState.isRunning) {
+                stopMetronome();
+                startMetronome();
+            }
+
+            updateBpmDisplay();
+        }
+
+        // 박자 변경
+        function setTimeSignature(beats) {
+            metronomeState.timeSignature = beats;
+            metronomeState.currentBeat = 0;
+
+            // 실행 중이면 재시작
+            if (metronomeState.isRunning) {
+                stopMetronome();
+                startMetronome();
+            }
+        }
+
+        // 메트로놈 버튼 업데이트
+        function updateMetronomeButton() {
+            const btn = document.getElementById('metronomeToggle');
+            if (metronomeState.isRunning) {
+                btn.textContent = '⏹';
+                btn.classList.add('active');
+            } else {
+                btn.textContent = '▶';
+                btn.classList.remove('active');
+            }
+        }
+
+        // BPM 표시 업데이트
+        function updateBpmDisplay() {
+            const slider = document.getElementById('bpmSlider');
+            const value = document.getElementById('bpmValue');
+            slider.value = metronomeState.bpm;
+            value.textContent = `${metronomeState.bpm} BPM`;
+
+            // 프리셋 버튼 활성화 상태 업데이트
+            document.querySelectorAll('.bpm-preset').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.bpm) === metronomeState.bpm);
+            });
         }
 
         function playNote(frequency, options = {}) {
@@ -1012,6 +1243,33 @@
 
         newRecordingBtn.addEventListener('click', () => {
             startNewRecording();
+        });
+
+        // 메트로놈 이벤트
+        document.getElementById('metronomeToggle').addEventListener('click', toggleMetronome);
+
+        // 박자 선택
+        document.querySelectorAll('.control-button[data-time-sig]').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelector('.control-button[data-time-sig].active').classList.remove('active');
+                button.classList.add('active');
+                setTimeSignature(parseInt(button.dataset.timeSig));
+            });
+        });
+
+        // BPM 프리셋
+        document.querySelectorAll('.bpm-preset').forEach(button => {
+            button.addEventListener('click', () => {
+                setMetronomeBpm(parseInt(button.dataset.bpm));
+            });
+        });
+
+        // BPM 슬라이더
+        const bpmSlider = document.getElementById('bpmSlider');
+        const bpmValue = document.getElementById('bpmValue');
+
+        bpmSlider.addEventListener('input', () => {
+            setMetronomeBpm(parseInt(bpmSlider.value));
         });
 
         // 초기 렌더링
